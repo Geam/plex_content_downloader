@@ -1,12 +1,18 @@
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="css/main.css" type="text/css">
   <script src="https://raw.githubusercontent.com/metatribal/xmlToJSON/master/lib/xmlToJSON.min.js" charset="utf-8" type="text/javascript"></script>
 </head>
 <body>
-  <div id="loginInfo">
-    <input placeholder="Login" id="plexLogin" type="text">
-    <input placeholder="Password" id="plexPassword" type="password">
-    <button type="button" id="plexSendLogin">Login</button>
+  <div id="topBar">
+    <div id="controlDiv" class="topBar-cont"></div>
+    <div id="loginInfo" class="topBar-cont">
+      <div id="loginDiv" class="topBar-elem">
+        <input placeholder="Login" id="plexLogin" type="text" class="topBar-elem">
+        <input placeholder="Password" id="plexPassword" type="password" class="topBar-elem">
+      </div>
+      <button type="button" id="plexSendLogin" class="topBar-elem">Login</button>
+    </div>
   </div>
   <div id="content">
   </div>
@@ -33,7 +39,7 @@ const fEncodeArgs = (sMethod, oArgs) => {
           return sPrev + (iIdx > 0 ? "&" : "") + fEncodeOne(sKey, sCur, uValue[sCur]);
         }, "");
       default:
-        return sKey + "=" + sValue;
+        return sKey + "=" + encodeURIComponent(uValue);
     }
   };
 
@@ -125,9 +131,21 @@ const oPlexUrl = {
   sPms: 'https://plex.tv/api/resources?includeHttps=1',
 };
 
-const aMediaType = [
-  "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
-];
+const oStrings = {
+  en: {
+    topBar: {
+      connect: "Connexion",
+      disconnect: "Logout",
+      login: "Login",
+      source: "Source",
+      search: "Search",
+      type: "Type",
+      mediaType: [
+        "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
+      ],
+    }
+  }
+};
 
 var oPlexHeaders = {
   'Accept': 'application/json',
@@ -162,18 +180,25 @@ var oXHRCallback = {
       }
     });
     if (aServer.length > 0) {
-      document.getElementById('loginInfo').hidden = true;
-      fAddContent("#content",
-        fNewEl('div', { id: "controlBar" }, [
-          fNewEl('select', { id: "serverSelector", name: "serverSelector" }, aServer.reduce((aPrev, oCur, iIdx) => {
+      document.getElementById('loginDiv').hidden = true;
+      fAddContent("#controlDiv", [
+        fNewEl('label', { class: "dropdown topBar-margin" },
+          fNewEl('select', { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
             return aPrev.concat(fNewEl('option', { value: iIdx }, oCur.name));
-          }, [])),
-          fNewEl('input', { id: "searchInput", name: "searchInput", type: "sarch" }, ""),
-          fNewEl('select', { id: "searchTypeSelector", name: "searchTypeSelector" }, aMediaType.reduce((aPrev, sCur, iIdx) => {
-            return aPrev.concat(fNewEl('option', { value: iIdx }, sCur));
           }, []))
-        ])
-      );
+        ),
+        fNewEl('div', { id: "searchDiv", class: "topBar-elem topBar-margin" }, [
+          fNewEl('span', { class: "icon-magnifier topBar-margin", style: "font-size: 12px;" }, ""),
+          fNewEl('input', { id: "searchInput", name: "searchInput", type: "sarch", class: "topBar-elem topBar-margin" }, "")
+        ]),
+        fNewEl('label', { class: "dropdown" },
+          fNewEl('select', { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
+            oStrings.en.topBar.mediaType.reduce((aPrev, sCur, iIdx) => {
+              return aPrev.concat(fNewEl('option', { value: iIdx }, sCur));
+            }, [])
+          )
+        )
+      ]);
     }
   },
   fError: (data) => {
