@@ -1,0 +1,207 @@
+<head>
+  <meta charset="UTF-8">
+  <script src="https://raw.githubusercontent.com/metatribal/xmlToJSON/master/lib/xmlToJSON.min.js" charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+  <div id="loginInfo">
+    <input placeholder="Login" id="plexLogin" type="text">
+    <input placeholder="Password" id="plexPassword" type="password">
+    <button type="button" id="plexSendLogin">Login</button>
+  </div>
+  <div id="content">
+  </div>
+  <script>
+"use strict";
+
+const fEncodeArgs = (sMethod, oArgs) => {
+  // get type of stuff
+  const fWhat = Object.prototype.toString;
+
+  var fEncodeOne = (sKey, sId, sData) => {
+    return sKey + "[" + sId + "]=" + encodeURIComponent(sData);
+  };
+
+  // encode arg depending if it string, array or object
+  const fEncodeArgsSub = (sKey, uValue) => {
+    switch(fWhat.call(uValue)) {
+      case "[object Array]":
+        return uValue.reduce((sPrev, sCur, iIdx) => {
+          return sPrev + (iIdx > 0 ? "&" : "") + fEncodeOne(sKey, iIdx, sCur);
+        }, "");
+      case "[object Object]":
+        return Object.keys(uValue).reduce((sPrev, sCur, iIdx) => {
+          return sPrev + (iIdx > 0 ? "&" : "") + fEncodeOne(sKey, sCur, uValue[sCur]);
+        }, "");
+      default:
+        return sKey + "=" + sValue;
+    }
+  };
+
+  // create string from arg
+  var sArgs = Object.keys(oArgs).reduce((sPrev, sCur, iIdx) => {
+    return sPrev + (iIdx > 0 ? "&" : "") + fEncodeArgsSub(sCur, oArgs[sCur]);
+  }, "");
+
+  // return depending on type
+  if (sMethod === 'POST') { return sArgs.replace(/%20/g, '+'); }
+  else if (sMethod === 'GET') { return "?" + sArgs; }
+  return sArgs;
+}
+
+const $http = (sUrl, oHeaders) => {
+  const fAjax = (sMethod, sUrl, oHeaders, oArgs) => {
+    var promise = new Promise((resolve, reject) => {
+      var req = new XMLHttpRequest();
+      var sUri = sUrl;
+      var sSendArgs = null;
+
+      req.open(sMethod, sUri);
+      if (oArgs) {
+        if (sMethod === 'GET') {
+          sUri += fEncodeArgs(sMethod, oArgs);
+        } else if (sMethod === 'POST') {
+          sSendArgs = fEncodeArgs(sMethod, oArgs);
+          req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        }
+      }
+
+      if (oHeaders) {
+        Object.keys(oHeaders).forEach((sValue, iIdx) => {
+          req.setRequestHeader(sValue, oHeaders[sValue]);
+        });
+      }
+
+      req.onload = () => {
+        if (req.status >= 200 && req.status < 300) {
+          resolve(req.response);
+        } else {
+          reject(req.statusText);
+        }
+      };
+      req.onerror = () => {
+        reject(req.statusText);
+      };
+      req.send(sSendArgs);
+    });
+    return promise;
+  };
+
+  return {
+    'get': (oArgs) => {
+      return fAjax('GET', sUrl, oHeaders, oArgs);
+    },
+    'post': (oArgs) => {
+      return fAjax('POST', sUrl, oHeaders, oArgs);
+    }
+  };
+};
+
+const fAddContent = (el, content) => {
+  if (typeof el === "string")
+    el = document.querySelector(el);
+  if (!(el instanceof Element)) { return }
+  if (typeof content === "string") {
+    el.appendChild(document.createTextNode(content));
+  } else if (Array.isArray(content)) {
+    content.forEach((subContent) => {
+      fAddContent(el, subContent);
+    });
+  } else if (content instanceof Element) {
+    el.appendChild(content);
+  }
+};
+
+const fNewEl = (tag, attrs, content) => {
+  var el = document.createElement(tag);
+  Object.keys(attrs).forEach((key) => {
+    el.setAttribute(key, attrs[key]);
+  });
+  fAddContent(el, content);
+  return el;
+};
+
+const oPlexUrl = {
+  sAuth: 'https://plex.tv/users/sign_in.json',
+  sPms: 'https://plex.tv/api/resources?includeHttps=1',
+};
+
+const aMediaType = [
+  "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
+];
+
+var oPlexHeaders = {
+  'Accept': 'application/json',
+  'X-Plex-Product': 'Plex Downloader',
+  'X-Plex-Version': '1',
+  'X-Plex-Client-Identifier': '28d88c58'
+};
+var aServer = [];
+
+var oXHRCallback = {
+  fLogin: (sData) => {
+    var sAuthToken = JSON.parse(sData).user.authentication_token;
+    var oPlexPmsHeaders = Object.assign({}, oPlexHeaders);
+    oPlexPmsHeaders["X-Plex-Token"] = sAuthToken;
+    return $http(oPlexUrl.sPms, oPlexPmsHeaders).get();
+  },
+  fPms: (data) => {
+    var pmsRes = xmlToJSON.parseString(data);
+    console.log(pmsRes);
+    pmsRes.MediaContainer[0].Device.forEach((oDevice) => {
+      if (oDevice._attr.product._value === "Plex Media Server") {
+        var oServer = {
+          accessToken: oDevice._attr.accessToken._value,
+          name: oDevice._attr.name._value,
+        };
+        oDevice.Connection.forEach((oConnection) => {
+          if (!oConnection._attr.local._value) {
+            oServer.uri = oConnection._attr.uri._value;
+          }
+        });
+        aServer.push(oServer);
+      }
+    });
+    if (aServer.length > 0) {
+      document.getElementById('loginInfo').hidden = true;
+      fAddContent("#content",
+        fNewEl('div', { id: "controlBar" }, [
+          fNewEl('select', { id: "serverSelector", name: "serverSelector" }, aServer.reduce((aPrev, oCur, iIdx) => {
+            return aPrev.concat(fNewEl('option', { value: iIdx }, oCur.name));
+          }, [])),
+          fNewEl('input', { id: "searchInput", name: "searchInput", type: "sarch" }, ""),
+          fNewEl('select', { id: "searchTypeSelector", name: "searchTypeSelector" }, aMediaType.reduce((aPrev, sCur, iIdx) => {
+            return aPrev.concat(fNewEl('option', { value: iIdx }, sCur));
+          }, []))
+        ])
+      );
+    }
+  },
+  fError: (data) => {
+    console.log(data);
+  }
+};
+
+const fPlexConnection = () => {
+  var hPlexLogin = document.getElementById('plexLogin');
+  var hPlexPassword = document.getElementById('plexPassword');
+  var oPayload = {
+    'user' : {
+      'login': hPlexLogin.value,
+      'password': hPlexPassword.value
+    }
+  };
+  if (oPayload.user.login && oPayload.user.password) {
+    $http(oPlexUrl.sAuth, oPlexHeaders)
+      .post(oPayload)
+      .then(oXHRCallback.fLogin)
+      .then(oXHRCallback.fPms)
+      .catch(oXHRCallback.fError);
+  } else {
+    hPlexLogin.style.borderColor = oPayload.user.login ? null : "red";
+    hPlexPassword.style.borderColor = oPayload.user.password ? null : "red";
+  }
+};
+
+document.getElementById("plexSendLogin").onclick = fPlexConnection;
+  </script>
+</body>
