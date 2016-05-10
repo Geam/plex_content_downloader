@@ -2,20 +2,6 @@
   <meta charset="UTF-8">
   <link rel="stylesheet" href="css/main.css" type="text/css">
   <script src="https://raw.githubusercontent.com/metatribal/xmlToJSON/master/lib/xmlToJSON.min.js" charset="utf-8" type="text/javascript"></script>
-</head>
-<body>
-  <div id="topBar">
-    <div id="controlDiv" class="topBar-cont"></div>
-    <div id="loginInfo" class="topBar-cont">
-      <div id="loginDiv" class="topBar-elem">
-        <input placeholder="Login" id="plexLogin" type="text" class="topBar-elem">
-        <input placeholder="Password" id="plexPassword" type="password" class="topBar-elem">
-      </div>
-      <button type="button" id="plexSendLogin" class="topBar-elem">Login</button>
-    </div>
-  </div>
-  <div id="content">
-  </div>
   <script>
 "use strict";
 
@@ -49,8 +35,8 @@ const fEncodeArgs = (sMethod, oArgs) => {
   }, "");
 
   // return depending on type
-  if (sMethod === 'POST') { return sArgs.replace(/%20/g, '+'); }
-  else if (sMethod === 'GET') { return "?" + sArgs; }
+  if (sMethod === "POST") { return sArgs.replace(/%20/g, "+"); }
+  else if (sMethod === "GET") { return "?" + sArgs; }
   return sArgs;
 }
 
@@ -61,20 +47,23 @@ const $http = (sUrl, oHeaders) => {
       var sUri = sUrl;
       var sSendArgs = null;
 
-      req.open(sMethod, sUri);
       if (oArgs) {
-        if (sMethod === 'GET') {
+        if (sMethod === "GET") {
           sUri += fEncodeArgs(sMethod, oArgs);
-        } else if (sMethod === 'POST') {
+        } else if (sMethod === "POST") {
           sSendArgs = fEncodeArgs(sMethod, oArgs);
-          req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         }
       }
+
+      req.open(sMethod, sUri);
 
       if (oHeaders) {
         Object.keys(oHeaders).forEach((sValue, iIdx) => {
           req.setRequestHeader(sValue, oHeaders[sValue]);
         });
+      }
+      if (sMethod === "POST") {
+        req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
       }
 
       req.onload = () => {
@@ -93,42 +82,20 @@ const $http = (sUrl, oHeaders) => {
   };
 
   return {
-    'get': (oArgs) => {
-      return fAjax('GET', sUrl, oHeaders, oArgs);
+    get: (oArgs) => {
+      return fAjax("GET", sUrl, oHeaders, oArgs);
     },
-    'post': (oArgs) => {
-      return fAjax('POST', sUrl, oHeaders, oArgs);
+    post: (oArgs) => {
+      return fAjax("POST", sUrl, oHeaders, oArgs);
     }
   };
 };
 
-const fAddContent = (el, content) => {
-  if (typeof el === "string")
-    el = document.querySelector(el);
-  if (!(el instanceof Element)) { return }
-  if (typeof content === "string") {
-    el.appendChild(document.createTextNode(content));
-  } else if (Array.isArray(content)) {
-    content.forEach((subContent) => {
-      fAddContent(el, subContent);
-    });
-  } else if (content instanceof Element) {
-    el.appendChild(content);
-  }
-};
-
-const fNewEl = (tag, attrs, content) => {
-  var el = document.createElement(tag);
-  Object.keys(attrs).forEach((key) => {
-    el.setAttribute(key, attrs[key]);
-  });
-  fAddContent(el, content);
-  return el;
-};
-
 const oPlexUrl = {
-  sAuth: 'https://plex.tv/users/sign_in.json',
-  sPms: 'https://plex.tv/api/resources?includeHttps=1',
+  sAuth: "https://plex.tv/users/sign_in.json",
+  sPms: "https://plex.tv/api/resources?includeHttps=1",
+  sSections: "/library/sections/",
+  sSearch: "/search"
 };
 
 const oStrings = {
@@ -137,9 +104,7 @@ const oStrings = {
       connect: "Connexion",
       disconnect: "Logout",
       login: "Login",
-      source: "Source",
-      search: "Search",
-      type: "Type",
+      password: "Password",
       mediaType: [
         "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
       ],
@@ -148,23 +113,125 @@ const oStrings = {
 };
 
 var oPlexHeaders = {
-  'Accept': 'application/json',
-  'X-Plex-Product': 'Plex Downloader',
-  'X-Plex-Version': '1',
-  'X-Plex-Client-Identifier': '28d88c58'
+  "Accept": "application/json",
+  "X-Plex-Product": "Plex Downloader",
+  "X-Plex-Version": "1",
+  "X-Plex-Client-Identifier": "28d88c58"
 };
 var aServer = [];
 
+var fDraw = () => {
+  const fAddContent = (el, content) => {
+    if (typeof el === "string")
+      el = document.querySelector(el);
+    if (!(el instanceof Element)) { return }
+    if (typeof content === "string") {
+      el.appendChild(document.createTextNode(content));
+    } else if (Array.isArray(content)) {
+      content.forEach((subContent) => {
+        fAddContent(el, subContent);
+      });
+    } else if (content instanceof Element) {
+      el.appendChild(content);
+    }
+  };
+  const fNewEl = (tag, attrs, content) => {
+    var el = document.createElement(tag);
+    Object.keys(attrs).forEach((key) => {
+      el.setAttribute(key, attrs[key]);
+    });
+    fAddContent(el, content);
+    return el;
+  };
+  const fDelEl = (el) => {
+    if (typeof el === "string")
+      el = document.querySelector(el);
+    if (el instanceof Element) {
+      while (el.firstChild) {
+        if (el.firstChild instanceof Element)
+          fDelEl(el.firstChild);
+        el.removeChild(el.firstChild);
+      }
+    }
+  };
+
+  return {
+    fInit: (oStrings) => {
+      fAddContent("body", [
+          fNewEl("div", { id: "topBar" }, [
+            fNewEl("div", { id: "controlDiv", class: "topBar-cont" }, null),
+            fNewEl("div", { id: "loginInfo", class: "topBar-cont" }, [
+              fNewEl("div", { id: "connectDiv", class: "topBar-elem" }, [
+                fNewEl("input", { id: "plexLogin", class: "topBar-elem", placeholder: oStrings.topBar.login, type: "text" }, null),
+                fNewEl("input", { id: "plexPassword", class: "topBar-elem", placeholder: oStrings.topBar.password, type: "password" }, null),
+                fNewEl("button", { id: "plexSendLogin", class: "topBar-elem plexButton", type: "button" }, oStrings.topBar.connect)
+              ]),
+              fNewEl("div", { id: "connectedDiv", class: "topBar-elem", hidden: "true" }, [
+                fNewEl("button", { id: "plexDisconnect", class: "topBar-elem plexButton", type: "button" }, oStrings.topBar.disconnect)
+              ])
+            ])
+          ]),
+          fNewEl("div", { id: "content" }, null)
+      ]);
+    },
+    fControllBar: (oStrings) => {
+      fAddContent("#controlDiv", [
+        fNewEl("label", { class: "dropdown topBar-margin" },
+          fNewEl("select", { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
+            return aPrev.concat(fNewEl("option", { value: iIdx }, oCur.name));
+          }, []))
+        ),
+        fNewEl("div", { id: "searchDiv", class: "topBar-elem topBar-margin" }, [
+          fNewEl("span", { class: "icon-magnifier topBar-margin", style: "font-size: 12px;" }, ""),
+          fNewEl("input", { id: "searchInput", name: "searchInput", type: "sarch", class: "topBar-elem topBar-margin" }, "")
+        ]),
+        fNewEl("label", { class: "dropdown" },
+          fNewEl("select", { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
+            oStrings.topBar.mediaType.reduce((aPrev, sCur, iIdx) => {
+              return aPrev.concat(fNewEl("option", { value: iIdx }, sCur));
+            }, [])
+          )
+        )
+      ]);
+    },
+    fDisconnect: () => {
+      fDelEl("#controlDiv");
+    },
+    fSearch: (oRes) => {
+      var _lib = "";
+      var _type = "";
+      const drawData = (aData, sTitle) => {
+        return aData.concat(fNewEl("h4", {}, sTitle));
+      };
+      const drawType = (aType, sType) => {
+        _type = sType;
+        return aType.concat(fNewEl("div", {}, [
+          fNewEl("h2", {}, sType),
+          fNewEl("div", {}, Object.keys(oRes[_lib][sType]).reduce(drawData, []))
+        ]));
+      };
+      const drawLib = (aLib, sLib) => {
+        _lib = sLib;
+        return aLib.concat(fNewEl("div", {}, [
+          fNewEl("h1", {}, sLib),
+          fNewEl("div", {}, Object.keys(oRes[sLib]).reduce(drawType, []))
+        ]));
+      };
+      fDelEl("#content");
+      fAddContent("#content", Object.keys(oRes).reduce(drawLib, []));
+    }
+  }
+};
+
 var oXHRCallback = {
-  fLogin: (sData) => {
-    var sAuthToken = JSON.parse(sData).user.authentication_token;
+  fLogin: (oData) => {
+    var sAuthToken = JSON.parse(oData).user.authentication_token;
     var oPlexPmsHeaders = Object.assign({}, oPlexHeaders);
     oPlexPmsHeaders["X-Plex-Token"] = sAuthToken;
     return $http(oPlexUrl.sPms, oPlexPmsHeaders).get();
   },
-  fPms: (data) => {
-    var pmsRes = xmlToJSON.parseString(data);
-    console.log(pmsRes);
+  fPms: (sData) => {
+    var pmsRes = xmlToJSON.parseString(sData);
     pmsRes.MediaContainer[0].Device.forEach((oDevice) => {
       if (oDevice._attr.product._value === "Plex Media Server") {
         var oServer = {
@@ -180,53 +247,121 @@ var oXHRCallback = {
       }
     });
     if (aServer.length > 0) {
-      document.getElementById('loginDiv').hidden = true;
-      fAddContent("#controlDiv", [
-        fNewEl('label', { class: "dropdown topBar-margin" },
-          fNewEl('select', { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
-            return aPrev.concat(fNewEl('option', { value: iIdx }, oCur.name));
-          }, []))
-        ),
-        fNewEl('div', { id: "searchDiv", class: "topBar-elem topBar-margin" }, [
-          fNewEl('span', { class: "icon-magnifier topBar-margin", style: "font-size: 12px;" }, ""),
-          fNewEl('input', { id: "searchInput", name: "searchInput", type: "sarch", class: "topBar-elem topBar-margin" }, "")
-        ]),
-        fNewEl('label', { class: "dropdown" },
-          fNewEl('select', { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
-            oStrings.en.topBar.mediaType.reduce((aPrev, sCur, iIdx) => {
-              return aPrev.concat(fNewEl('option', { value: iIdx }, sCur));
-            }, [])
-          )
-        )
-      ]);
+      document.getElementById("connectDiv").hidden = true;
+      fDraw().fControllBar(oStrings.en);
+      document.getElementById("connectedDiv").hidden = false;
+      document.getElementById("searchInput").onkeydown = oPlex.fSearch;
+    }
+    return oPlex.fPmsSectionsSub();
+  },
+  fSearch: (oData) => {
+    oData = JSON.parse(oData);
+    var oRes = oData._children.reduce((oPrev, oCur) => {
+      if (!oCur.librarySectionTitle) { return oPrev; }
+      if (!oPrev[oCur.librarySectionTitle]) {
+        oPrev[oCur.librarySectionTitle] = {};
+      }
+      if (!oPrev[oCur.librarySectionTitle][oCur.type]) {
+        oPrev[oCur.librarySectionTitle][oCur.type] = {};
+      }
+      var oTmp = {
+        uri: oCur.key,
+        thumb: oCur.thumb
+      }
+      oPrev[oCur.librarySectionTitle][oCur.type][oCur.title] = oTmp;
+      return oPrev;
+    }, {});
+    fDraw().fSearch(oRes);
+  },
+  fSections: (oData) => {
+    oData = JSON.parse(oData);
+    var oServer = aServer[document.querySelector("#serverSelector").value];
+    oServer.lib = [];
+    oData._children.forEach((oSection) => {
+      oServer.lib[oSection.key] = oSection.title;
+    });
+  },
+  fError: (oData) => {
+    console.log(oData);
+  }
+};
+
+var oPlex = {
+  fConnection: () => {
+    var hPlexLogin = document.getElementById("plexLogin");
+    var hPlexPassword = document.getElementById("plexPassword");
+    var oPayload = {
+      "user" : {
+        "login": hPlexLogin.value,
+        "password": hPlexPassword.value
+      }
+    };
+    if (oPayload.user.login && oPayload.user.password) {
+      $http(oPlexUrl.sAuth, oPlexHeaders)
+        .post(oPayload)
+        .then(oXHRCallback.fLogin)
+        .then(oXHRCallback.fPms)
+        .then(oXHRCallback.fSections)
+        .catch(oXHRCallback.fError);
+    } else {
+      hPlexLogin.style.borderColor = oPayload.user.login ? null : "red";
+      hPlexPassword.style.borderColor = oPayload.user.password ? null : "red";
     }
   },
-  fError: (data) => {
-    console.log(data);
-  }
-};
-
-const fPlexConnection = () => {
-  var hPlexLogin = document.getElementById('plexLogin');
-  var hPlexPassword = document.getElementById('plexPassword');
-  var oPayload = {
-    'user' : {
-      'login': hPlexLogin.value,
-      'password': hPlexPassword.value
-    }
-  };
-  if (oPayload.user.login && oPayload.user.password) {
-    $http(oPlexUrl.sAuth, oPlexHeaders)
-      .post(oPayload)
-      .then(oXHRCallback.fLogin)
-      .then(oXHRCallback.fPms)
+  fConnectionEnter: (e) => {
+    if (e.which == 13 || e.keyCode == 13)
+      oPlex.fConnection();
+  },
+  fDisconnect: () => {
+    fDraw().fDisconnect();
+    aServer.length = 0;
+    document.getElementById("connectDiv").hidden = false;
+    document.getElementById("connectedDiv").hidden = true;
+  },
+  fPmsSections: () => {
+    oPlex.fPmsSectionsSub()
+      .then(oXHRCallback.fSections)
       .catch(oXHRCallback.fError);
-  } else {
-    hPlexLogin.style.borderColor = oPayload.user.login ? null : "red";
-    hPlexPassword.style.borderColor = oPayload.user.password ? null : "red";
+  },
+  fPmsSectionsSub: () => {
+    var oQuery = oPlex.fPreQuery();
+    return $http(oQuery.oServer.uri + oPlexUrl.sSections, oQuery.oHeader).get(null);
+  },
+  fSearch: (e) => {
+    if (e.which == 13 || e.keyCode == 13) {
+      var oQuery = oPlex.fPreQuery();
+      oQuery.oPayload.query = document.querySelector("#searchInput").value;
+      if (oQuery.oPayload.query.length === 0) { return ; }
+      $http(oQuery.oServer.uri + oPlexUrl.sSearch , oQuery.oHeader)
+        .get(oQuery.oPayload)
+        .then(oXHRCallback.fSearch)
+        .catch(oXHRCallback.fError);
+    }
+  },
+  fPreQuery: () => {
+    var oQuery = {
+      oServer: aServer[document.querySelector("#serverSelector").value],
+      oHeader: Object.assign({}, oPlexHeaders),
+      oPayload: {}
+    };
+    oQuery.oHeader["X-Plex-Token"] = oQuery.oServer.accessToken;
+    return oQuery;
   }
 };
 
-document.getElementById("plexSendLogin").onclick = fPlexConnection;
+document.addEventListener("DOMContentLoaded", () => {
+  new Promise((resolve, reject) => {
+    fDraw().fInit(oStrings.en);
+    resolve();
+  }).then(() => {
+    document.getElementById("plexSendLogin").onclick = oPlex.fConnection;
+    document.getElementById("plexLogin").onkeydown = oPlex.fConnectionEnter;
+    document.getElementById("plexPassword").onkeydown = oPlex.fConnectionEnter;
+    document.getElementById("plexDisconnect").onclick = oPlex.fDisconnect;
+  }).catch(() => {
+  });
+}, false);
   </script>
+</head>
+<body>
 </body>

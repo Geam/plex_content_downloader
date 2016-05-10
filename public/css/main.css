@@ -32,13 +32,17 @@ body {
     right: 0px;
 }
 
-#plexSendLogin {
+.plexButton {
     border: 0px none;
     border-radius: 10px;
     margin-left: 4px;
     background-color: #ff8a00;
     color: #fff;
     font-weight: 600;
+}
+
+#plexDisconnect {
+    background: #666;
 }
 
 #searchDiv {
