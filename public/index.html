@@ -196,6 +196,7 @@ var fDraw = () => {
     },
     fDisconnect: () => {
       fDelEl("#controlDiv");
+      fDelEl("#content");
     },
     fSearch: (oRes) => {
       var _lib = "";
@@ -313,6 +314,7 @@ var oPlex = {
       oPlex.fConnection();
   },
   fDisconnect: () => {
+    document.getElementById("searchInput").onkeydown = null;
     fDraw().fDisconnect();
     aServer.length = 0;
     document.getElementById("connectDiv").hidden = false;
