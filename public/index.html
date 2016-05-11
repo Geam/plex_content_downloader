@@ -108,6 +108,25 @@ const oStrings = {
       mediaType: [
         "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
       ],
+    },
+    content: {
+      mediaType: {
+        movie: "Movie",
+        show: "Show",
+        season: "Season",
+        episode: "Episode",
+        trailer: "Trailer",
+        comic: "Comic",
+        person: "Person",
+        artist: "Artist",
+        album: "Album",
+        track: "Track",
+        photoAlbum: "Photo Album",
+        picture: "Picture",
+        photo: "Photo",
+        clip: "Clip",
+        playlistItem: "PlayList"
+      }
     }
   }
 };
@@ -119,8 +138,9 @@ var oPlexHeaders = {
   "X-Plex-Client-Identifier": "28d88c58"
 };
 var aServer = [];
+var oDraw = {};
 
-var fDraw = () => {
+var fDraw = (oStrings) => {
   const fAddContent = (el, content) => {
     if (typeof el === "string")
       el = document.querySelector(el);
@@ -156,7 +176,7 @@ var fDraw = () => {
   };
 
   return {
-    fInit: (oStrings) => {
+    fInit: () => {
       fAddContent("body", [
           fNewEl("div", { id: "topBar" }, [
             fNewEl("div", { id: "controlDiv", class: "topBar-cont" }, null),
@@ -174,7 +194,7 @@ var fDraw = () => {
           fNewEl("div", { id: "content" }, null)
       ]);
     },
-    fControllBar: (oStrings) => {
+    fControllBar: () => {
       fAddContent("#controlDiv", [
         fNewEl("label", { class: "dropdown topBar-margin" },
           fNewEl("select", { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
@@ -198,28 +218,48 @@ var fDraw = () => {
       fDelEl("#controlDiv");
       fDelEl("#content");
     },
-    fSearch: (oRes) => {
-      var _lib = "";
-      var _type = "";
-      const drawData = (aData, sTitle) => {
-        return aData.concat(fNewEl("h4", {}, sTitle));
-      };
-      const drawType = (aType, sType) => {
-        _type = sType;
-        return aType.concat(fNewEl("div", {}, [
-          fNewEl("h2", {}, sType),
-          fNewEl("div", {}, Object.keys(oRes[_lib][sType]).reduce(drawData, []))
-        ]));
-      };
-      const drawLib = (aLib, sLib) => {
-        _lib = sLib;
-        return aLib.concat(fNewEl("div", {}, [
-          fNewEl("h1", {}, sLib),
-          fNewEl("div", {}, Object.keys(oRes[sLib]).reduce(drawType, []))
-        ]));
-      };
+    fSearchInit: () => {
       fDelEl("#content");
-      fAddContent("#content", Object.keys(oRes).reduce(drawLib, []));
+    },
+    fSearch: (oRes) => {
+      const drawElement = (oElement) => {
+        if (!oElement.librarySectionID) { return ; }
+        var parentDiv = document.getElementById("res-" + oElement.type + "-content");
+        if (!(parentDiv instanceof Element)) {
+          fAddContent("#content",
+            fNewEl("div", { id: "res-" + oElement.type }, [
+              fNewEl("h1", {}, oStrings.content.mediaType[oElement.type]),
+              fNewEl("div", { id: "res-" + oElement.type + "-content" }, null)
+            ])
+          );
+          parentDiv = document.getElementById("res-" + oElement.type + "-content");
+        }
+        var fDrawType = {
+          movie: (oMovie) => {
+            return fNewEl("h2", {}, oMovie.title);
+          },
+          show: (oShow) => {
+            return fNewEl("h2", {}, oShow.title);
+          },
+          season: (oSeason) => {
+            return fNewEl("h2", {}, oSeason.title);
+          },
+          episode: (oEpisode) => {
+            return fNewEl("h2", {}, oEpisode.title);
+          },
+          artist: (oArtist) => {
+            return fNewEl("h2", {}, oArtist.title);
+          },
+          album: (oAlbum) => {
+            return fNewEl("h2", {}, oAlbum.title);
+          },
+          track: (oTrack) => {
+            return fNewEl("h2", {}, oTrack.title);
+          }
+        };
+        fAddContent(parentDiv, fDrawType[oElement.type](oElement));
+      }
+      oRes._children.forEach(drawElement);
     }
   }
 };
@@ -249,30 +289,16 @@ var oXHRCallback = {
     });
     if (aServer.length > 0) {
       document.getElementById("connectDiv").hidden = true;
-      fDraw().fControllBar(oStrings.en);
+      oDraw.fControllBar();
       document.getElementById("connectedDiv").hidden = false;
       document.getElementById("searchInput").onkeydown = oPlex.fSearch;
     }
     return oPlex.fPmsSectionsSub();
   },
   fSearch: (oData) => {
-    oData = JSON.parse(oData);
-    var oRes = oData._children.reduce((oPrev, oCur) => {
-      if (!oCur.librarySectionTitle) { return oPrev; }
-      if (!oPrev[oCur.librarySectionTitle]) {
-        oPrev[oCur.librarySectionTitle] = {};
-      }
-      if (!oPrev[oCur.librarySectionTitle][oCur.type]) {
-        oPrev[oCur.librarySectionTitle][oCur.type] = {};
-      }
-      var oTmp = {
-        uri: oCur.key,
-        thumb: oCur.thumb
-      }
-      oPrev[oCur.librarySectionTitle][oCur.type][oCur.title] = oTmp;
-      return oPrev;
-    }, {});
-    fDraw().fSearch(oRes);
+    console.log(oData);
+    oDraw.fSearchInit();
+    oDraw.fSearch(JSON.parse(oData));
   },
   fSections: (oData) => {
     oData = JSON.parse(oData);
@@ -315,7 +341,7 @@ var oPlex = {
   },
   fDisconnect: () => {
     document.getElementById("searchInput").onkeydown = null;
-    fDraw().fDisconnect();
+    oDraw.fDisconnect();
     aServer.length = 0;
     document.getElementById("connectDiv").hidden = false;
     document.getElementById("connectedDiv").hidden = true;
@@ -352,8 +378,9 @@ var oPlex = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
+  oDraw = fDraw(oStrings.en);
   new Promise((resolve, reject) => {
-    fDraw().fInit(oStrings.en);
+    oDraw.fInit();
     resolve();
   }).then(() => {
     document.getElementById("plexSendLogin").onclick = oPlex.fConnection;
