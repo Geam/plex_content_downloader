@@ -206,7 +206,7 @@ var fDraw = (oStrings) => {
         fNewEl("label", { class: "dropdown" },
           fNewEl("select", { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
             Object.keys(oStrings.content.mediaType).reduce((aPrev, sCur, iIdx) => {
-              return aPrev.concat(fNewEl("option", { value: iIdx }, oStrings.content.mediaType[sCur]));
+              return aPrev.concat(fNewEl("option", { value: iIdx + 1 }, oStrings.content.mediaType[sCur]));
             }, [fNewEl("option", { value: 0 }, oStrings.topBar.all)])
           )
         )
@@ -294,8 +294,6 @@ var oXHRCallback = {
     return oPlex.fPmsSectionsSub();
   },
   fSearch: (oData) => {
-    console.log(oData);
-    oDraw.fSearchInit();
     oDraw.fSearch(JSON.parse(oData));
   },
   fSections: (oData) => {
@@ -358,10 +356,20 @@ var oPlex = {
       var oQuery = oPlex.fPreQuery();
       oQuery.oPayload.query = document.querySelector("#searchInput").value;
       if (oQuery.oPayload.query.length === 0) { return ; }
+      oQuery.oPayload.type = document.querySelector("#searchTypeSelector").value;
+      if (oQuery.oPayload.type === "0") { delete oQuery.oPayload.type; }
+      oDraw.fSearchInit();
       $http(oQuery.oServer.uri + oPlexUrl.sSearch , oQuery.oHeader)
         .get(oQuery.oPayload)
         .then(oXHRCallback.fSearch)
         .catch(oXHRCallback.fError);
+      if (!oQuery.oPayload.type) {
+        oQuery.oPayload.type = 10;
+        $http(oQuery.oServer.uri + oPlexUrl.sSearch , oQuery.oHeader)
+          .get(oQuery.oPayload)
+          .then(oXHRCallback.fSearch)
+          .catch(oXHRCallback.fError);
+      }
     }
   },
   fPreQuery: () => {
