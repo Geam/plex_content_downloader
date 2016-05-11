@@ -105,9 +105,7 @@ const oStrings = {
       disconnect: "Logout",
       login: "Login",
       password: "Password",
-      mediaType: [
-        "All", "Movie", "Show", "Season", "Episode", , , , "Artist", "Album", "Track", "Photo Album", "Photo"
-      ],
+      all: "All",
     },
     content: {
       mediaType: {
@@ -207,9 +205,9 @@ var fDraw = (oStrings) => {
         ]),
         fNewEl("label", { class: "dropdown" },
           fNewEl("select", { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
-            oStrings.topBar.mediaType.reduce((aPrev, sCur, iIdx) => {
-              return aPrev.concat(fNewEl("option", { value: iIdx }, sCur));
-            }, [])
+            Object.keys(oStrings.content.mediaType).reduce((aPrev, sCur, iIdx) => {
+              return aPrev.concat(fNewEl("option", { value: iIdx }, oStrings.content.mediaType[sCur]));
+            }, [fNewEl("option", { value: 0 }, oStrings.topBar.all)])
           )
         )
       ]);
