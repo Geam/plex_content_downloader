@@ -226,8 +226,8 @@ var fDraw = (oStrings) => {
         if (!(parentDiv instanceof Element)) {
           fAddContent("#content",
             fNewEl("div", { id: "res-" + oElement.type }, [
-              fNewEl("h1", {}, oStrings.content.mediaType[oElement.type]),
-              fNewEl("div", { id: "res-" + oElement.type + "-content" }, null)
+              fNewEl("div", { class: "sectionTitle" }, oStrings.content.mediaType[oElement.type]),
+              fNewEl("div", { id: "res-" + oElement.type + "-content", class: "sectionContainer"}, null)
             ])
           );
           parentDiv = document.getElementById("res-" + oElement.type + "-content");
@@ -252,7 +252,10 @@ var fDraw = (oStrings) => {
             return fNewEl("h2", {}, oAlbum.title);
           },
           track: (oTrack) => {
-            return fNewEl("h2", {}, oTrack.title);
+            return fNewEl("div", {}, [
+              fNewEl("img", { src: oTrack.thumb, alt: oTrack.parentTile }, null),
+              oTrack.title
+            ]);
           }
         };
         fAddContent(parentDiv, fDrawType[oElement.type](oElement));
