@@ -68,13 +68,13 @@ const $http = (sUrl, oHeaders) => {
 
       req.onload = () => {
         if (req.status >= 200 && req.status < 300) {
-          resolve(req.response);
+          resolve(req);
         } else {
-          reject(req.statusText);
+          reject(req);
         }
       };
       req.onerror = () => {
-        reject(req.statusText);
+        reject(req);
       };
       req.send(sSendArgs);
     });
@@ -266,25 +266,30 @@ var fDraw = (oStrings) => {
 };
 
 var oXHRCallback = {
-  fLogin: (oData) => {
-    var sAuthToken = JSON.parse(oData).user.authentication_token;
+  fLogin: (oReq) => {
+    var sAuthToken = JSON.parse(oReq.response).user.authentication_token;
     var oPlexPmsHeaders = Object.assign({}, oPlexHeaders);
     oPlexPmsHeaders["X-Plex-Token"] = sAuthToken;
     return $http(oPlexUrl.sPms, oPlexPmsHeaders).get();
   },
-  fPms: (sData) => {
-    var pmsRes = xmlToJSON.parseString(sData);
+  fPms: (oReq) => {
+    var pmsRes = xmlToJSON.parseString(oReq.response);
     pmsRes.MediaContainer[0].Device.forEach((oDevice) => {
       if (oDevice._attr.product._value === "Plex Media Server") {
         var oServer = {
           accessToken: oDevice._attr.accessToken._value,
           name: oDevice._attr.name._value,
+          http: {}
         };
         oDevice.Connection.forEach((oConnection) => {
           if (!oConnection._attr.local._value) {
             oServer.uri = oConnection._attr.uri._value;
           }
         });
+        var oHeader = Object.assign({}, oPlexHeaders);
+        oHeader["X-Plex-Token"] = oDevice._attr.accessToken._value;
+        oServer.http.search = $http(oServer.uri + oPlexUrl.sSearch, oHeader);
+        oServer.http.sections = $http(oServer.uri + oPlexUrl.sSections, oHeader);
         aServer.push(oServer);
       }
     });
@@ -294,21 +299,29 @@ var oXHRCallback = {
       document.getElementById("connectedDiv").hidden = false;
       document.getElementById("searchInput").onkeydown = oPlex.fSearch;
     }
-    return oPlex.fPmsSectionsSub();
+    oPlex.fPmsSections();
   },
-  fSearch: (oData) => {
-    oDraw.fSearch(JSON.parse(oData));
+  fSearch: (oReq) => {
+    var oData = JSON.parse(oReq.response);
+    oData.uri = oReq.responseURL.substring(0, oReq.responseURL.search("/search"));
+    oData.accessToken = aServer.reduce((sPrev, oServer) => {
+      if (oServer.uri === oData.uri) {
+        return fEncodeArgs("GET", { "X-Plex-Token": oServer.accessToken });
+      }
+      return sPrev;
+    }, "");
+    oDraw.fSearch(oData);
   },
-  fSections: (oData) => {
-    oData = JSON.parse(oData);
+  fSections: (oReq) => {
+    var oData = JSON.parse(oReq.response);
     var oServer = aServer[document.querySelector("#serverSelector").value];
     oServer.lib = [];
     oData._children.forEach((oSection) => {
       oServer.lib[oSection.key] = oSection.title;
     });
   },
-  fError: (oData) => {
-    console.log(oData);
+  fError: (oReq) => {
+    console.log(oReq);
   }
 };
 
@@ -327,7 +340,6 @@ var oPlex = {
         .post(oPayload)
         .then(oXHRCallback.fLogin)
         .then(oXHRCallback.fPms)
-        .then(oXHRCallback.fSections)
         .catch(oXHRCallback.fError);
     } else {
       hPlexLogin.style.borderColor = oPayload.user.login ? null : "red";
@@ -346,43 +358,33 @@ var oPlex = {
     document.getElementById("connectedDiv").hidden = true;
   },
   fPmsSections: () => {
-    oPlex.fPmsSectionsSub()
-      .then(oXHRCallback.fSections)
-      .catch(oXHRCallback.fError);
-  },
-  fPmsSectionsSub: () => {
-    var oQuery = oPlex.fPreQuery();
-    return $http(oQuery.oServer.uri + oPlexUrl.sSections, oQuery.oHeader).get(null);
+    aServer.forEach((oServer) => {
+      oServer.http.sections.get(null)
+        .then(oXHRCallback.fSections)
+        .catch(oXHRCallback.fError);
+    });
   },
   fSearch: (e) => {
     if (e.which == 13 || e.keyCode == 13) {
-      var oQuery = oPlex.fPreQuery();
-      oQuery.oPayload.query = document.querySelector("#searchInput").value;
-      if (oQuery.oPayload.query.length === 0) { return ; }
-      oQuery.oPayload.type = document.querySelector("#searchTypeSelector").value;
-      if (oQuery.oPayload.type === "0") { delete oQuery.oPayload.type; }
+      var oPayload = {
+        query: document.querySelector("#searchInput").value,
+        type: document.querySelector("#searchTypeSelector").value
+      };
+      if (oPayload.type === "0") { delete oPayload.type; }
+      if (oPayload.query.length === 0) { return ; }
       oDraw.fSearchInit();
-      $http(oQuery.oServer.uri + oPlexUrl.sSearch , oQuery.oHeader)
-        .get(oQuery.oPayload)
-        .then(oXHRCallback.fSearch)
-        .catch(oXHRCallback.fError);
-      if (!oQuery.oPayload.type) {
-        oQuery.oPayload.type = 10;
-        $http(oQuery.oServer.uri + oPlexUrl.sSearch , oQuery.oHeader)
-          .get(oQuery.oPayload)
+      aServer.forEach((oServer) => {
+        oServer.http.search.get(oPayload)
           .then(oXHRCallback.fSearch)
           .catch(oXHRCallback.fError);
-      }
+        if (!oPayload.type) {
+          oPayload.type = 10;
+          oServer.http.search.get(oPayload)
+            .then(oXHRCallback.fSearch)
+            .catch(oXHRCallback.fError);
+        }
+      })
     }
-  },
-  fPreQuery: () => {
-    var oQuery = {
-      oServer: aServer[document.querySelector("#serverSelector").value],
-      oHeader: Object.assign({}, oPlexHeaders),
-      oPayload: {}
-    };
-    oQuery.oHeader["X-Plex-Token"] = oQuery.oServer.accessToken;
-    return oQuery;
   }
 };
 
