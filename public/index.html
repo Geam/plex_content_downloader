@@ -253,8 +253,12 @@ var fDraw = (oStrings) => {
           },
           track: (oTrack) => {
             return fNewEl("div", {}, [
-              fNewEl("img", { src: oTrack.thumb, alt: oTrack.parentTile }, null),
-              oTrack.title
+              fNewEl("img", { src: oRes.uri + oTrack.thumb + oRes.accessToken, alt: oTrack.parentTile }, null),
+              fNewEl("div", {}, [
+                fNewEl("a", {}, oTrack.grandparentTitle),
+                fNewEl("a", {}, oTrack.parentTitle),
+                fNewEl("a", {}, oTrack.Title)
+              ])
             ]);
           }
         };

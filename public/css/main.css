@@ -80,14 +80,20 @@ body {
     margin: 5px;
 }
 
-.sectionContainer div {
+.sectionContainer > div {
     flex: 0 1 auto;
     align-self: auto;
-    min-width: 200px;
-    min-height: 200px;
-    width: 200px;
+    min-width: 140px;
+    min-height: 180px;
+    width: 140px;
     word-wrap: break-word;
     margin: 5px;
+    text-align: center;
+}
+
+.sectionContainer > div > img {
+    width: 120;
+    height: 120;
 }
 
 label.dropdown select {
