@@ -1,0 +1,23 @@
+{
+  "name": "plex",
+  "version": "1.0.0",
+  "description": "This is just an attempt to use the plex media server api to download content using it's file indexation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Geam/plex_content_downloader.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Geam/plex_content_downloader/issues"
+  },
+  "homepage": "https://github.com/Geam/plex_content_downloader#readme",
+  "devDependencies": {
+    "webpack": "^1.13.0"
+  }
+}
