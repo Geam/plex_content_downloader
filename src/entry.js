@@ -27,6 +27,7 @@ var oXHRCallback = {
     var sAuthToken = JSON.parse(oReq.response).user.authentication_token;
     var oPlexPmsHeaders = Object.assign({}, oPlexHeaders);
     oPlexPmsHeaders["X-Plex-Token"] = sAuthToken;
+    sessionStorage.setItem("accessToken", sAuthToken);
     return http.fRequest(oPlexUrl.sPms, oPlexPmsHeaders).get();
   },
   fPms: (oReq) => {
@@ -109,6 +110,7 @@ var oPlex = {
   fDisconnect: () => {
     document.getElementById("searchInput").onkeydown = null;
     oDraw.fDisconnect();
+    sessionStorage.removeItem("accessToken");
     aServer.length = 0;
     document.getElementById("connectDiv").hidden = false;
     document.getElementById("connectedDiv").hidden = true;
@@ -151,4 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("plexLogin").onkeydown = oPlex.fConnectionEnter;
   document.getElementById("plexPassword").onkeydown = oPlex.fConnectionEnter;
   document.getElementById("plexDisconnect").onclick = oPlex.fDisconnect;
+  let accessToken = sessionStorage.getItem("accessToken");
+  if (accessToken) {
+    let tmpHeader = Object.assign({}, oPlexHeaders);
+    tmpHeader["X-Plex-Token"] = accessToken;
+    http.fRequest(oPlexUrl.sPms, tmpHeader).get()
+      .then(oXHRCallback.fPms)
+      .catch(oXHRCallback.fError);
+  }
 }, false);
