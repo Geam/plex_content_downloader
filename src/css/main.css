@@ -75,9 +75,8 @@ body {
 .sectionContainer {
     display: flex;
     flex-flow: row wrap;
-    justify-content: space-around;
+    justify-content: center;
     align-content: flex-start;
-    align-items: center;
     margin: 5px;
 }
 
@@ -90,11 +89,12 @@ body {
     word-wrap: break-word;
     margin: 5px;
     text-align: center;
+    background-color: #000;
 }
 
 .sectionContainer > div > img {
-    width: 120;
-    height: 120;
+    width: 120px;
+    height: 120px;
 }
 
 label.dropdown select {
