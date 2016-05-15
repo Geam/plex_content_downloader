@@ -147,14 +147,8 @@ var oPlex = {
 
 document.addEventListener("DOMContentLoaded", () => {
   oDraw = fDraw(oStrings.en);
-  new Promise((resolve, reject) => {
-    oDraw.fInit();
-    resolve();
-  }).then(() => {
-    document.getElementById("plexSendLogin").onclick = oPlex.fConnection;
-    document.getElementById("plexLogin").onkeydown = oPlex.fConnectionEnter;
-    document.getElementById("plexPassword").onkeydown = oPlex.fConnectionEnter;
-    document.getElementById("plexDisconnect").onclick = oPlex.fDisconnect;
-  }).catch(() => {
-  });
+  document.getElementById("plexSendLogin").onclick = oPlex.fConnection;
+  document.getElementById("plexLogin").onkeydown = oPlex.fConnectionEnter;
+  document.getElementById("plexPassword").onkeydown = oPlex.fConnectionEnter;
+  document.getElementById("plexDisconnect").onclick = oPlex.fDisconnect;
 }, false);
