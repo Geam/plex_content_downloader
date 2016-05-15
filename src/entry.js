@@ -48,7 +48,7 @@ var oXHRCallback = {
       oHeader["X-Plex-Token"] = oServer.accessToken;
       oServer.http.search = http.fRequest(oServer.uri + oPlexUrl.sSearch, oHeader);
       oServer.http.sections = http.fRequest(oServer.uri + oPlexUrl.sSections, oHeader);
-      return aServer.concat(oServer);
+      return aPrev.concat(oServer);
     }, []);
     if (aServer.length > 0) {
       document.getElementById("connectDiv").hidden = true;
