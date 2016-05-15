@@ -52,7 +52,7 @@ var oXHRCallback = {
     });
     if (aServer.length > 0) {
       document.getElementById("connectDiv").hidden = true;
-      oDraw.fControllBar();
+      oDraw.fControllBar(aServer);
       document.getElementById("connectedDiv").hidden = false;
       document.getElementById("searchInput").onkeydown = oPlex.fSearch;
     }

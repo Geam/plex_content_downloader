@@ -52,7 +52,7 @@ module.exports = (oStrings) => {
           fNewEl("div", { id: "content" }, null)
       ]);
     },
-    fControllBar: () => {
+    fControllBar: (aServer) => {
       fAddContent("#controlDiv", [
         fNewEl("label", { class: "dropdown topBar-margin" },
           fNewEl("select", { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
