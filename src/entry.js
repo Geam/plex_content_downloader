@@ -147,6 +147,7 @@ var oPlex = {
 
 document.addEventListener("DOMContentLoaded", () => {
   oDraw = fDraw(oStrings.en);
+  oDraw.fInit();
   document.getElementById("plexSendLogin").onclick = oPlex.fConnection;
   document.getElementById("plexLogin").onkeydown = oPlex.fConnectionEnter;
   document.getElementById("plexPassword").onkeydown = oPlex.fConnectionEnter;

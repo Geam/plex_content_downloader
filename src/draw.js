@@ -1,4 +1,12 @@
 module.exports = (oStrings) => {
+  const fAddAttribute = (el, attr) => {
+    if (typeof el === "string")
+      el = document.querySelector(el);
+    if (!(el instanceof Element)) { return }
+    Object.keys(attr).forEach((key) => {
+      el.attributes[key] = attr[key];
+    });
+  };
   const fAddContent = (el, content) => {
     if (typeof el === "string")
       el = document.querySelector(el);
@@ -35,45 +43,28 @@ module.exports = (oStrings) => {
 
   return {
     fInit: () => {
-      fAddContent("body", [
-          fNewEl("div", { id: "topBar" }, [
-            fNewEl("div", { id: "controlDiv", class: "topBar-cont" }, null),
-            fNewEl("div", { id: "loginInfo", class: "topBar-cont" }, [
-              fNewEl("div", { id: "connectDiv", class: "topBar-elem" }, [
-                fNewEl("input", { id: "plexLogin", class: "topBar-elem", placeholder: oStrings.topBar.login, type: "text" }, null),
-                fNewEl("input", { id: "plexPassword", class: "topBar-elem", placeholder: oStrings.topBar.password, type: "password" }, null),
-                fNewEl("button", { id: "plexSendLogin", class: "topBar-elem plexButton", type: "button" }, oStrings.topBar.connect)
-              ]),
-              fNewEl("div", { id: "connectedDiv", class: "topBar-elem", hidden: "true" }, [
-                fNewEl("button", { id: "plexDisconnect", class: "topBar-elem plexButton", type: "button" }, oStrings.topBar.disconnect)
-              ])
-            ])
-          ]),
-          fNewEl("div", { id: "content" }, null)
-      ]);
+      fAddAttribute("#plexLogin", {placeholder: oStrings.topBar.login});
+      fAddAttribute("#plexPassword", {placeholder: oStrings.topBar.password});
+      fDelEl("#plexSendLogin");
+      fAddContent("#plexSendLogin", oStrings.topBar.connect);
+      fDelEl("#plexDisconnect");
+      fAddContent("#plexDisconnect", oStrings.topBar.disconnect);
     },
     fControllBar: (aServer) => {
-      fAddContent("#controlDiv", [
-        fNewEl("label", { class: "dropdown topBar-margin" },
-          fNewEl("select", { id: "serverSelector", name: "serverSelector", class: "topBar-elem" }, aServer.reduce((aPrev, oCur, iIdx) => {
-            return aPrev.concat(fNewEl("option", { value: iIdx }, oCur.name));
-          }, []))
-        ),
-        fNewEl("div", { id: "searchDiv", class: "topBar-elem topBar-margin" }, [
-          fNewEl("span", { class: "icon-magnifier topBar-margin", style: "font-size: 12px;" }, ""),
-          fNewEl("input", { id: "searchInput", name: "searchInput", type: "sarch", class: "topBar-elem topBar-margin" }, "")
-        ]),
-        fNewEl("label", { class: "dropdown" },
-          fNewEl("select", { id: "searchTypeSelector", name: "searchTypeSelector", class: "topBar-elem" },
-            Object.keys(oStrings.content.mediaType).reduce((aPrev, sCur, iIdx) => {
-              return aPrev.concat(fNewEl("option", { value: iIdx + 1 }, oStrings.content.mediaType[sCur]));
-            }, [fNewEl("option", { value: 0 }, oStrings.topBar.all)])
-          )
-        )
-      ]);
+      fDelEl("#serverSelector");
+      fAddContent("#serverSelector", aServer.reduce((aPrev, oCur, iIdx) => {
+        return aPrev.concat(fNewEl("option", { value: iIdx }, oCur.name));
+      }, []));
+      fDelEl("#searchTypeSelector");
+      fAddContent("#searchTypeSelector",
+        Object.keys(oStrings.content.mediaType).reduce((aPrev, sCur, iIdx) => {
+          return aPrev.concat(fNewEl("option", { value: iIdx + 1 },
+                                     oStrings.content.mediaType[sCur]));
+            }, [fNewEl("option", { value: 0 }, oStrings.topBar.all)]));
+      document.getElementById("controlDiv").style.display = "";
     },
     fDisconnect: () => {
-      fDelEl("#controlDiv");
+      document.getElementById("controlDiv").style.display = "none";
       fDelEl("#content");
     },
     fSearchInit: () => {
@@ -86,8 +77,10 @@ module.exports = (oStrings) => {
         if (!(parentDiv instanceof Element)) {
           fAddContent("#content",
             fNewEl("div", { id: "res-" + oElement.type }, [
-              fNewEl("div", { class: "sectionTitle" }, oStrings.content.mediaType[oElement.type]),
-              fNewEl("div", { id: "res-" + oElement.type + "-content", class: "sectionContainer"}, null)
+              fNewEl("div", { class: "sectionTitle" },
+                     oStrings.content.mediaType[oElement.type]),
+              fNewEl("div", { id: "res-" + oElement.type + "-content",
+                     class: "sectionContainer"}, null)
             ])
           );
           parentDiv = document.getElementById("res-" + oElement.type + "-content");

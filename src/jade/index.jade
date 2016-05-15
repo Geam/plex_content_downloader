@@ -1,0 +1,23 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    script(src="bundle.js", type="text/javascript", charset="utf-8")
+  body
+    div#topBar
+      div#controlDiv.topBar-cont(style="display: none")
+        label.dropdown.topBar-margin
+          select#serverSelector.topBar-elem(name="serverSelector")
+        div#searchDiv.topBar-elem.topBar-margin
+          span.icon-magnifier.topBar-margin(style="font-size: 12px;")
+          input#searchInput.topBar-elem.topBar-margin(type="search", name="searchInput")
+        label.dropdown.topBar-margin
+          select#searchTypeSelector.topBar-elem(name="searchTypeSelector")
+      div#loginInfo.topBar-cont
+        div#connectDiv.topBar-elem
+          input#plexLogin.topBar-elem(type="text", placeholder="Login")
+          input#plexPassword.topBar-elem(type="password", placeholder="Password")
+          button#plexSendLogin.topBar-elem.plexButton(type="button") Connexion
+        div#connectedDiv.topBar-elem(hidden="true")
+          button#plexDisconnect.topBar-elem.plexButton(type="button") Disconnect
+    div#content
