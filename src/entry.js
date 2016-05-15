@@ -30,26 +30,25 @@ var oXHRCallback = {
     return http.fRequest(oPlexUrl.sPms, oPlexPmsHeaders).get();
   },
   fPms: (oReq) => {
-    var pmsRes = xmlToJSON.parseString(oReq.response);
-    pmsRes.MediaContainer[0].Device.forEach((oDevice) => {
-      if (oDevice._attr.product._value === "Plex Media Server") {
-        var oServer = {
-          accessToken: oDevice._attr.accessToken._value,
-          name: oDevice._attr.name._value,
-          http: {}
-        };
-        oDevice.Connection.forEach((oConnection) => {
-          if (!oConnection._attr.local._value) {
-            oServer.uri = oConnection._attr.uri._value;
-          }
-        });
-        var oHeader = Object.assign({}, oPlexHeaders);
-        oHeader["X-Plex-Token"] = oDevice._attr.accessToken._value;
-        oServer.http.search = http.fRequest(oServer.uri + oPlexUrl.sSearch, oHeader);
-        oServer.http.sections = http.fRequest(oServer.uri + oPlexUrl.sSections, oHeader);
-        aServer.push(oServer);
-      }
-    });
+    var pmsRes = (new window.DOMParser()).parseFromString(oReq.response, "text/xml");
+    aServer = Array.from(pmsRes.documentElement.children).reduce((aPrev, oCur) => {
+      if (oCur.attributes.provides.value !== "server") { return aPrev; }
+      var oServer = {
+        accessToken: oCur.attributes.accessToken.value,
+        name: oCur.attributes.name.value,
+        uri: Array.from(oCur.children).reduce((sPrev, oCur) => {
+          if (oCur.attributes.local.value == "1") { return sPrev; }
+          return oCur.attributes.uri.value;
+        }, ""),
+        http: {}
+      };
+      if (! oServer.uri) { return aPrev; }
+      var oHeader = Object.assign({}, oPlexHeaders);
+      oHeader["X-Plex-Token"] = oServer.accessToken;
+      oServer.http.search = http.fRequest(oServer.uri + oPlexUrl.sSearch, oHeader);
+      oServer.http.sections = http.fRequest(oServer.uri + oPlexUrl.sSections, oHeader);
+      return aServer.concat(oServer);
+    }, []);
     if (aServer.length > 0) {
       document.getElementById("connectDiv").hidden = true;
       oDraw.fControllBar(aServer);
