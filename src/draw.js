@@ -99,18 +99,32 @@ module.exports = (oStrings) => {
             return fNewEl("h2", {}, oEpisode.title);
           },
           artist: (oArtist) => {
-            return fNewEl("h2", {}, oArtist.title);
+            return fNewEl("div", {}, [
+              fNewEl("img", { src: oRes.uri + oArtist.thumb + oRes.accessToken, alt: oArtist.title }),
+              fNewEl("div", {}, [
+                fNewEl("a", { type:"artist", uri:oArtist.key, class: "sType" }, oArtist.title)
+              ])
+            ]);
           },
           album: (oAlbum) => {
-            return fNewEl("h2", {}, oAlbum.title);
+            return fNewEl("div", {}, [
+              fNewEl("img", { src: oRes.uri + oAlbum.thumb + oRes.accessToken, alt: oAlbum.title }),
+              fNewEl("div", {}, [
+                fNewEl("a", { type:"artist", uri:oAlbum.parentKey, class: "sTypeParent" }, oAlbum.parentTitle),
+                fNewEl("br", {}),
+                fNewEl("a", { type:"album", uri:oAlbum.key, class: "sType" }, oAlbum.title)
+              ])
+            ]);
           },
           track: (oTrack) => {
             return fNewEl("div", {}, [
-              fNewEl("img", { src: oRes.uri + oTrack.thumb + oRes.accessToken, alt: oTrack.parentTile }, null),
+              fNewEl("img", { src: oRes.uri + oTrack.thumb + oRes.accessToken, alt: oTrack.parentTile }),
               fNewEl("div", {}, [
-                fNewEl("a", {}, oTrack.grandparentTitle),
-                fNewEl("a", {}, oTrack.parentTitle),
-                fNewEl("a", {}, oTrack.Title)
+                fNewEl("a", { type:"artist", uri:oTrack.grandparentKey, class: "sTypeGrandParent" }, oTrack.grandparentTitle),
+                fNewEl("br", {}),
+                fNewEl("a", { type:"album", uri:oTrack.parentKey, class: "sTypeParent" }, oTrack.parentTitle),
+                fNewEl("br", {}),
+                fNewEl("a", { type:"track", uri:oTrack.key, class: "sType" }, oTrack.title)
               ])
             ]);
           }

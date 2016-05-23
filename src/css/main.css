@@ -62,6 +62,7 @@ body {
 #content {
     margin: 10px;
     color: #aaa;
+    font-family: OpenSans-Regular;
 }
 
 .sectionTitle {
@@ -78,6 +79,7 @@ body {
     justify-content: center;
     align-content: flex-start;
     margin: 5px;
+    font-size: 12px;
 }
 
 .sectionContainer > div {
@@ -95,6 +97,22 @@ body {
 .sectionContainer > div > img {
     width: 120px;
     height: 120px;
+}
+
+.sectionContainer > div > div > a.sType {
+    color: #ff8a00;
+}
+
+.sectionContainer > div > div > a.sTypeParent {
+    color: #c66b00;
+}
+
+.sectionContainer > div > div > a.sTypeGrandParent {
+    color: #9b5400;
+}
+
+.sectionContainer > div > div > a:hover {
+    color: #ffb864;
 }
 
 label.dropdown select {
@@ -166,4 +184,9 @@ label.dropdown:after {
         top: 3px;
         width: 16px;
     }
+}
+
+@font-face {
+    font-family: "OpenSans-Regular";
+    src: url("/fonts/OpenSans-Regular.ttf") format("truetype");
 }
