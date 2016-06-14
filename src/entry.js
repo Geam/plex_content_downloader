@@ -61,12 +61,18 @@ var oXHRCallback = {
   fSearch: (oReq) => {
     var oData = JSON.parse(oReq.response);
     oData.uri = oReq.responseURL.substring(0, oReq.responseURL.search("/search"));
-    oData.accessToken = aServer.reduce((sPrev, oServer) => {
+    let temp = aServer.reduce((sPrev, oServer) => {
       if (oServer.uri === oData.uri) {
-        return http.fEncodeArgs("GET", { "X-Plex-Token": oServer.accessToken });
+        return {
+          accessToken: http.fEncodeArgs("GET", { "X-Plex-Token": oServer.accessToken }),
+          serverName: oServer.name
+        };
       }
       return sPrev;
-    }, "");
+    }, {});
+    for (let key in temp) {
+      oData[key] = temp[key];
+    }
     oDraw.fSearch(oData);
   },
   fSections: (oReq) => {
