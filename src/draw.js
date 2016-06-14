@@ -71,7 +71,7 @@ module.exports = (oStrings) => {
       fDelEl("#content");
     },
     fSearch: (oRes) => {
-      const drawElement = (oElement) => {
+      const fDrawElement = (oElement) => {
         if (!oElement.librarySectionID) { return ; }
         var parentDiv = document.getElementById("res-" + oElement.type + "-content");
         if (!(parentDiv instanceof Element)) {
@@ -85,53 +85,71 @@ module.exports = (oStrings) => {
           );
           parentDiv = document.getElementById("res-" + oElement.type + "-content");
         }
-        var fDrawType = {
-          movie: (oMovie) => {
-            return fNewEl("h2", {}, oMovie.title);
-          },
-          show: (oShow) => {
-            return fNewEl("h2", {}, oShow.title);
-          },
-          season: (oSeason) => {
-            return fNewEl("h2", {}, oSeason.title);
-          },
-          episode: (oEpisode) => {
-            return fNewEl("h2", {}, oEpisode.title);
-          },
-          artist: (oArtist) => {
-            return fNewEl("div", {}, [
-              fNewEl("img", { src: oRes.uri + oArtist.thumb + oRes.accessToken, alt: oArtist.title }),
-              fNewEl("div", {}, [
-                fNewEl("a", { type:"artist", uri:oArtist.key, class: "sType" }, oArtist.title)
-              ])
-            ]);
-          },
-          album: (oAlbum) => {
-            return fNewEl("div", {}, [
-              fNewEl("img", { src: oRes.uri + oAlbum.thumb + oRes.accessToken, alt: oAlbum.title }),
-              fNewEl("div", {}, [
-                fNewEl("a", { type:"artist", uri:oAlbum.parentKey, class: "sTypeParent" }, oAlbum.parentTitle),
+        if (oElement.type === "season") { oElement.title = oStrings.content.mediaType.season + " " + oElement.index; }
+        else if (oElement.type === "episode") { oElement.parentTitle = oStrings.content.mediaType.season + " " + oElement.parentIndex; }
+        const aAccess = [
+          { key: "grandparentKey", title: "grandparentTitle", class: "sTypeGrandParent" },
+          { key: "parentKey", title: "parentTitle", class: "sTypeParent" },
+          { key: "key", title: "title", class: "sType" }
+        ];
+        const fDrawType = (oData) => {
+          let iOffset = 3 - oData.children.length;
+          return fNewEl("div", { class: oData.mainClass }, [
+            fNewEl("img", { src: oRes.uri + oData.thumb + oRes.accessToken, alt: oElement.title }),
+            fNewEl("div", {}, [].concat(oData.children.reduce((aPrev, eCur, iIdx) => {
+              if (iIdx === 0) {
+                return aPrev.concat(fNewEl("a", { type: eCur, uri: oElement[aAccess[iOffset].key], class: aAccess[iOffset].class }, oElement[aAccess[iOffset].title]));
+              }
+              return aPrev.concat([
                 fNewEl("br", {}),
-                fNewEl("a", { type:"album", uri:oAlbum.key, class: "sType" }, oAlbum.title)
-              ])
-            ]);
+                fNewEl("a", { type: eCur, uri: oElement[aAccess[iOffset + iIdx].key], class: aAccess[iOffset + iIdx].class }, oElement[aAccess[iOffset + iIdx].title])
+              ]);
+            }, []),[
+              fNewEl("br", {}),
+              fNewEl("span", { class: "serverName" }, oRes.serverName)
+            ]))
+          ]);
+        };
+        var oDrawType = {
+          movie: {
+            mainClass: "rectangle",
+            thumb: oElement.thumb ? oElement.thumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "movie" ]
           },
-          track: (oTrack) => {
-            return fNewEl("div", {}, [
-              fNewEl("img", { src: oRes.uri + oTrack.thumb + oRes.accessToken, alt: oTrack.parentTile }),
-              fNewEl("div", {}, [
-                fNewEl("a", { type:"artist", uri:oTrack.grandparentKey, class: "sTypeGrandParent" }, oTrack.grandparentTitle),
-                fNewEl("br", {}),
-                fNewEl("a", { type:"album", uri:oTrack.parentKey, class: "sTypeParent" }, oTrack.parentTitle),
-                fNewEl("br", {}),
-                fNewEl("a", { type:"track", uri:oTrack.key, class: "sType" }, oTrack.title)
-              ])
-            ]);
+          show: {
+            mainClass: "rectangle",
+            thumb: oElement.thumb ? oElement.thumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "show" ]
+          },
+          season: {
+            mainClass: "rectangle",
+            thumb: oElement.thumb ? oElement.parentThumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "show", "season" ]
+          },
+          episode: {
+            mainClass: "rectangle",
+            thumb: oElement.thumb ? oElement.grandparentThumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "show", "season", "episode" ]
+          },
+          artist: {
+            mainClass: "square",
+            thumb: oElement.thumb ? oElement.thumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "artist" ]
+          },
+          album: {
+            mainClass: "square",
+            thumb: oElement.thumb ? oElement.thumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "artist", "album" ]
+          },
+          track: {
+            mainClass: "square",
+            thumb: oElement.thumb ? oElement.thumb : "/:/resources/DefaultAlbumCover.png",
+            children: [ "artist", "album", "track" ]
           }
         };
-        fAddContent(parentDiv, fDrawType[oElement.type](oElement));
+        fAddContent(parentDiv, fDrawType(oDrawType[oElement.type]));
       };
-      oRes._children.forEach(drawElement);
+      oRes._children.forEach(fDrawElement);
     }
   };
 };

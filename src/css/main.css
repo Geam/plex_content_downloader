@@ -94,9 +94,14 @@ body {
     background-color: #000;
 }
 
-.sectionContainer > div > img {
+.sectionContainer > div.square > img {
     width: 120px;
     height: 120px;
+}
+
+.sectionContainer > div.rectangle > img {
+    width: 120px;
+    height: 180px;
 }
 
 .sectionContainer > div > div > a.sType {
@@ -113,6 +118,10 @@ body {
 
 .sectionContainer > div > div > a:hover {
     color: #ffb864;
+}
+
+.sectionContainer > div > div > span.serverName {
+    color: #666;
 }
 
 label.dropdown select {
