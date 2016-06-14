@@ -33,7 +33,7 @@ exports.fEncodeArgs = (sMethod, oArgs) => {
   if (sMethod === "POST") { return sArgs.replace(/%20/g, "+"); }
   else if (sMethod === "GET") { return "?" + sArgs; }
   return sArgs;
-}
+};
 
 exports.fRequest = (sUrl, oHeaders) => {
   const fAjax = (sMethod, sUrl, oHeaders, oArgs) => {

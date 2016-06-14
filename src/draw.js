@@ -2,7 +2,7 @@ module.exports = (oStrings) => {
   const fAddAttribute = (el, attr) => {
     if (typeof el === "string")
       el = document.querySelector(el);
-    if (!(el instanceof Element)) { return }
+    if (!(el instanceof Element)) { return; }
     Object.keys(attr).forEach((key) => {
       el.attributes[key] = attr[key];
     });
@@ -10,7 +10,7 @@ module.exports = (oStrings) => {
   const fAddContent = (el, content) => {
     if (typeof el === "string")
       el = document.querySelector(el);
-    if (!(el instanceof Element)) { return }
+    if (!(el instanceof Element)) { return; }
     if (typeof content === "string") {
       el.appendChild(document.createTextNode(content));
     } else if (Array.isArray(content)) {
@@ -130,8 +130,8 @@ module.exports = (oStrings) => {
           }
         };
         fAddContent(parentDiv, fDrawType[oElement.type](oElement));
-      }
+      };
       oRes._children.forEach(drawElement);
     }
-  }
+  };
 };

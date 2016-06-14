@@ -141,7 +141,7 @@ var oPlex = {
             .then(oXHRCallback.fSearch)
             .catch(oXHRCallback.fError);
         }
-      })
+      });
     }
   }
 };
