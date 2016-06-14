@@ -140,6 +140,7 @@ var oPlex = {
           oServer.http.search.get(oPayload)
             .then(oXHRCallback.fSearch)
             .catch(oXHRCallback.fError);
+          delete oPayload.type;
         }
       });
     }
